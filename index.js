@@ -1,10 +1,10 @@
 const mathOperIn = document.querySelector("#math-operation-input")
 const mathOperOut = document.querySelector("#math-operation-output")
 const debugJson = document.querySelector("#debug-json")
-const disallowedChars = new RegExp(/[^\d-+/()*^x ]/g)
-const consecutiveOperators = new RegExp(/[-+/*^][-+/*^]|\+ \+|\/ \/|\* \*|\^ \^|  |\d \d|\(\)\(\)\(|\(\)\(\)\)/g)
+const disallowedChars = new RegExp(/[^\d-+/\\()*^x ]/g)
+const consecutiveOperators = new RegExp(/[-+/\\*^][-+/*^]|\+ \+|\/ \/|\* \*|\^ \^|\\ \\|  |\d \d|\(\)\(\)\(|\(\)\(\)\)/g)
 const splitterChars = new RegExp(/ +|\+/)
-const operators = [ "+", "-", "=", "*", "/", "^" ]
+const operators = [ "+", "-", "=", "*", "/", "^", "\\" ]
 const parentheses = [ "(", ")" ]
 
 const errorMessages = {
@@ -105,6 +105,8 @@ function lexAndPars(mathOperation = "") {
 		return prev
 	}, []).flat(2)
 
+	console.log(operArr)
+
 	// returns arr for given position to first closing bracket in given arr
 	function getBracket(operArr, pos) {
 		const arr = operArr.slice(pos)
@@ -127,6 +129,9 @@ function lexAndPars(mathOperation = "") {
 
 		if (openingBrackets > closingBrackets) {
 			throw Error(errorMessages.missingClosingBracket)
+		}
+		if (closingBrackets > openingBrackets) {
+			throw Error(errorMessages.missingOpeningBracket)
 		}
 
 		selectedBracket.shift()
@@ -164,20 +169,38 @@ function lexAndPars(mathOperation = "") {
 		}
 
 		// replaces in the array every multiplication and division in given scope of operation, going from left to right
-		while (arr.includes("^")) {
+		console.log(arr)
+		while (arr.includes("^") || arr.includes("\\")) {
 			arr.forEach((value, index, arr) => {
-				if (value == "^") {
+				if (value == "^" || "\\") {
 					switch (value) {
 						case "^":
 							{
 								toOperationObject(arr, index, "exponentiation")
 								return
 							}
+						case "\\":
+							{
+								if (typeof prevVal(arr, index) == "number") {
+									toOperationObject(arr, index, "root")
+									return
+								}
+								{
+									console.log(arr)
+									const oper = new Operation([ 2, nextVal(arr, index) ], "root")
+									if (oper.values.includes(undefined)) {
+										throw Error(errorMessages.missingValueFor + "root")
+									}
+									arr.splice(index, 2, oper)
+									console.log(arr)
+									return
+								}
+							}
 					}
 				}
 			})
 		}
-
+		console.log(arr)
 		// replaces in the array every multiplication and division in given scope of operation, going from left to right
 		while (arr.includes("*") || arr.includes("/")) {
 			arr.forEach((value, index, arr) => {
@@ -216,7 +239,6 @@ function lexAndPars(mathOperation = "") {
 								}
 								if (typeof nextVal(arr, index) == "number") {
 									const oper = new Operation([ nextVal(arr, index) * -1 ], null, "simpleNumber")
-
 									arr.splice(index, 2, oper)
 									return
 								}
@@ -285,6 +307,11 @@ function interperter(operationObject = {}) {
 				{
 					valuesRecursion(operationObject)
 					return Math.pow(operationObject.values[ 0 ], operationObject.values[ 1 ])
+				}
+			case "root":
+				{
+					valuesRecursion(operationObject)
+					return Math.pow(operationObject.values[ 1 ], 1 / operationObject.values[ 0 ])
 				}
 		}
 	}
