@@ -78,10 +78,6 @@ function parser(mathOperation = "") {
 	// returns arr for given position to first closing bracket in given arr
 	function getBracket(operArr, pos) { // <- !!BUG!! ((2+2)(2+2)) sees as ((2+2)(2+2)
 		const arr = operArr.slice(pos)
-		const unwantedPrefixes = arr.slice(0, arr.indexOf("("))
-		// console.log("--> " + arr.indexOf("("))
-		// console.log(arr.slice(0, arr.indexOf("(")))
-
 		let openingBrackets = 0
 		let closingBracket = 0
 		const selectedBracket = arr.reduce((prev, value, index) => {
@@ -94,9 +90,7 @@ function parser(mathOperation = "") {
 					closingBracket++
 				}
 
-				if (openingBrackets != 0) {
-					prev.push(value)
-				}
+				prev.push(value)
 				return prev
 			}
 			return prev
@@ -125,14 +119,14 @@ function parser(mathOperation = "") {
 
 		// recursively evaluates every brackets in operation
 		while (arr.includes("(")) {
-			arr.forEach((value, index) => {
+			for (let index = 0; index < arr.length; index++) {
+				value = arr[ index ]
 				if (value == "(") {
-					// console.log(arr)
 					arr.splice(index, (getBracket(arr, index).length + 2), objectifier(getBracket(arr, index)))
 					arr = arr.flat(2)
-					console.log(arr)
+					break
 				}
-			})
+			}
 		}
 
 		// replaces in the array every multiplication and division in given scope of operation, going from left to right
