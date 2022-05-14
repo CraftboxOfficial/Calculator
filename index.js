@@ -2,7 +2,7 @@ const mathOperIn = document.querySelector("#math-operation-input")
 const mathOperOut = document.querySelector("#math-operation-output")
 
 const disallowedChars = new RegExp(/[^\d-+/()*^x ]/g)
-const consecutiveOperators = new RegExp(/--|\+\+|\/\/|\*\*|\^\^|  |\d \d/g)
+const consecutiveOperators = new RegExp(/--|\+\+|\/\/|\*\*|\^\^|  |\d \d|\(\)\(\)\(|\(\)\(\)\)/g)
 const splitterChars = new RegExp(/ +|\+/)
 const operators = [ "+", "-", "=", "*", "/", "^" ]
 const parentheses = [ "(", ")" ]
@@ -31,11 +31,26 @@ mathOperIn.addEventListener("input", (event) => {
 	mathOperIn.value = inputVal
 	// mathOperOut.textContent = mathOperIn.value
 
+	let operationObject = {}
 	// updates output only when there is a change in operation; excludes adding spaces
 	if (inputVal.length != inputLen) {
-		mathOperOut.textContent = parser(inputVal)
-		// console.log(parser(inputVal))
+		function parseOperation(operation) {
+			const parsedOperation = parser(operation)
+			if (parsedOperation.length == 1) {
+				return parsedOperation[ 0 ]
+			} else {
+				throw Error("Parser returned multiple objects; expected one object")
+			}
+		}
+
+		try {
+			operationObject = parseOperation(inputVal)
+		} catch {
+			operationObject = new Operation("Internal Error occurred", null, "Error")
+		}
 	}
+
+	mathOperOut.textContent = JSON.stringify(operationObject)
 	inputLen = inputVal.length
 })
 
@@ -76,14 +91,13 @@ function parser(mathOperation = "") {
 	}, [])
 
 	// returns arr for given position to first closing bracket in given arr
-	function getBracket(operArr, pos) { // <- !!BUG!! ((2+2)(2+2)) sees as ((2+2)(2+2)
+	function getBracket(operArr, pos) {
 		const arr = operArr.slice(pos)
 		let openingBrackets = 0
 		let closingBracket = 0
 		const selectedBracket = arr.reduce((prev, value, index) => {
 			if (closingBracket != openingBrackets || openingBrackets == 0) {
 				if (value == "(") {
-					console.log(index)
 					openingBrackets++
 				}
 				if (value == ")") {
@@ -96,11 +110,8 @@ function parser(mathOperation = "") {
 			return prev
 		}, [])
 
-
 		selectedBracket.shift()
 		selectedBracket.pop()
-
-		console.log(arr + " | " + selectedBracket + " | " + openingBrackets + " | " + closingBracket)
 
 		return selectedBracket
 	}
@@ -130,16 +141,27 @@ function parser(mathOperation = "") {
 		}
 
 		// replaces in the array every multiplication and division in given scope of operation, going from left to right
+		while (arr.includes("^")) {
+			arr.forEach((value, index, arr) => {
+				if (value == "^") {
+					switch (value) {
+						case "^":
+							arr.splice(index - 1, 3, new Operation([ prevVal(arr, index), nextVal(arr, index) ], "exponentiation"))
+							return
+					}
+				}
+			})
+		}
+
+		// replaces in the array every multiplication and division in given scope of operation, going from left to right
 		while (arr.includes("*") || arr.includes("/")) {
 			arr.forEach((value, index, arr) => {
 				if (value == "*" || value == "/") {
 					switch (value) {
 						case "*":
-							// console.log("*: " + [ prevVal(arr, index), nextVal(arr, index) ])
 							arr.splice(index - 1, 3, new Operation([ prevVal(arr, index), nextVal(arr, index) ], "multiplication"))
 							return
 						case "/":
-							// console.log("/: " + [ prevVal(arr, index), nextVal(arr, index) ])
 							arr.splice(index - 1, 3, new Operation([ prevVal(arr, index), nextVal(arr, index) ], "division"))
 							return
 					}
@@ -153,11 +175,9 @@ function parser(mathOperation = "") {
 				if (value == "+" || value == "-") {
 					switch (value) {
 						case "+":
-							// console.log("+: " + [ prevVal(arr, index), nextVal(arr, index) ])
 							arr.splice(index - 1, 3, new Operation([ prevVal(arr, index), nextVal(arr, index) ], "addition"))
 							return
 						case "-":
-							// console.log("-: " + [ prevVal(arr, index), nextVal(arr, index) ])
 							arr.splice(index - 1, 3, new Operation([ prevVal(arr, index), nextVal(arr, index) ], "subtraction"))
 							return
 					}
@@ -168,11 +188,5 @@ function parser(mathOperation = "") {
 		return arr
 	}
 
-	// DEBUG
-	const arr = objectifier(operArr)
-	// console.log(arr)
-	// console.log(JSON.stringify(arr))
-	// console.log(operArr)
-	// console.log(getBracket(operArr, 10))
-	return JSON.stringify(arr)
+	return objectifier(operArr)
 }
