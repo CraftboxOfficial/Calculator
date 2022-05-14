@@ -7,6 +7,13 @@ const splitterChars = new RegExp(/ +|\+/)
 const operators = [ "+", "-", "=", "*", "/", "^" ]
 const parentheses = [ "(", ")" ]
 
+const errorMessages = {
+	missingOpeningBracket: "Missing opening bracket",
+	missingClosingBracket: "Missing closing bracket",
+	missingValueFor: "Missing value for ",
+	multipleObjectsGenerated: "Parser: multiple objects genereated; expected one object",
+	noObjectGenerated: "Parser: no objects generated; expected one object",
+}
 class Operation {
 	constructor(values = [], operation = "", type = "operation") {
 		this.type = type
@@ -31,30 +38,21 @@ mathOperIn.addEventListener("input", (event) => {
 	mathOperIn.value = inputVal
 	// mathOperOut.textContent = mathOperIn.value
 
-	let operationObject = {}
 	// updates output only when there is a change in operation; excludes adding spaces
 	if (inputVal.length != inputLen) {
-		function parseOperation(operation) {
-			const parsedOperation = parser(operation)
-			if (parsedOperation.length == 1) {
-				return parsedOperation[ 0 ]
-			} else {
-				throw Error("Parser returned multiple objects; expected one object")
-			}
-		}
-
 		try {
-			operationObject = parseOperation(inputVal)
-		} catch {
-			operationObject = new Operation("Internal Error occurred", null, "Error")
+			const operationObject = lexAndPars(inputVal)
+			mathOperOut.textContent = JSON.stringify(operationObject)
+		} catch (err) {
+			console.log(err.value)
+			mathOperOut.textContent = err
 		}
 	}
 
-	mathOperOut.textContent = JSON.stringify(operationObject)
 	inputLen = inputVal.length
 })
 
-function parser(mathOperation = "") {
+function lexAndPars(mathOperation = "") {
 	const charsArr = mathOperation.split("").filter(char => char != " ").map(value => isNaN(parseFloat(value)) ? value : parseFloat(value))
 
 	// expands shorthands in math operation and fixes spereated numbers
@@ -94,14 +92,14 @@ function parser(mathOperation = "") {
 	function getBracket(operArr, pos) {
 		const arr = operArr.slice(pos)
 		let openingBrackets = 0
-		let closingBracket = 0
-		const selectedBracket = arr.reduce((prev, value, index) => {
-			if (closingBracket != openingBrackets || openingBrackets == 0) {
+		let closingBrackets = 0
+		const selectedBracket = arr.reduce((prev, value) => {
+			if (closingBrackets != openingBrackets || openingBrackets == 0) {
 				if (value == "(") {
 					openingBrackets++
 				}
 				if (value == ")") {
-					closingBracket++
+					closingBrackets++
 				}
 
 				prev.push(value)
@@ -109,6 +107,10 @@ function parser(mathOperation = "") {
 			}
 			return prev
 		}, [])
+
+		if (openingBrackets > closingBrackets) {
+			throw Error(errorMessages.missingClosingBracket)
+		}
 
 		selectedBracket.shift()
 		selectedBracket.pop()
@@ -124,6 +126,10 @@ function parser(mathOperation = "") {
 		}
 		function nextVal(array, index) {
 			return array[ index + 1 ]
+		}
+
+		if (!(arr.includes("(")) && arr.includes(")")) {
+			throw Error(errorMessages.missingOpeningBracket)
 		}
 
 		// \/ this is in mathematical order of operation
@@ -146,8 +152,14 @@ function parser(mathOperation = "") {
 				if (value == "^") {
 					switch (value) {
 						case "^":
-							arr.splice(index - 1, 3, new Operation([ prevVal(arr, index), nextVal(arr, index) ], "exponentiation"))
-							return
+							{
+								const oper = new Operation([ prevVal(arr, index), nextVal(arr, index) ], "exponentiation")
+								if (oper.values.includes(undefined)) {
+									throw Error(errorMessages.missingValueFor + "exponentiation")
+								}
+								arr.splice(index - 1, 3, oper)
+								return
+							}
 					}
 				}
 			})
@@ -159,11 +171,23 @@ function parser(mathOperation = "") {
 				if (value == "*" || value == "/") {
 					switch (value) {
 						case "*":
-							arr.splice(index - 1, 3, new Operation([ prevVal(arr, index), nextVal(arr, index) ], "multiplication"))
-							return
+							{
+								const oper = new Operation([ prevVal(arr, index), nextVal(arr, index) ], "multiplication")
+								if (oper.values.includes(undefined)) {
+									throw Error(errorMessages.missingValueFor + "multiplication")
+								}
+								arr.splice(index - 1, 3, oper)
+								return
+							}
 						case "/":
-							arr.splice(index - 1, 3, new Operation([ prevVal(arr, index), nextVal(arr, index) ], "division"))
-							return
+							{
+								const oper = new Operation([ prevVal(arr, index), nextVal(arr, index) ], "division")
+								if (oper.values.includes(undefined)) {
+									throw Error(errorMessages.missingValueFor + "division")
+								}
+								arr.splice(index - 1, 3, oper)
+								return
+							}
 					}
 				}
 			})
@@ -175,11 +199,23 @@ function parser(mathOperation = "") {
 				if (value == "+" || value == "-") {
 					switch (value) {
 						case "+":
-							arr.splice(index - 1, 3, new Operation([ prevVal(arr, index), nextVal(arr, index) ], "addition"))
-							return
+							{
+								const oper = new Operation([ prevVal(arr, index), nextVal(arr, index) ], "addition")
+								if (oper.values.includes(undefined)) {
+									throw Error(errorMessages.missingValueFor + "addition")
+								}
+								arr.splice(index - 1, 3, oper)
+								return
+							}
 						case "-":
-							arr.splice(index - 1, 3, new Operation([ prevVal(arr, index), nextVal(arr, index) ], "subtraction"))
-							return
+							{
+								const oper = new Operation([ prevVal(arr, index), nextVal(arr, index) ], "subtraction")
+								if (oper.values.includes(undefined)) {
+									throw Error(errorMessages.missingValueFor + "subtraction")
+								}
+								arr.splice(index - 1, 3, oper)
+								return
+							}
 					}
 				}
 			})
@@ -188,5 +224,7 @@ function parser(mathOperation = "") {
 		return arr
 	}
 
-	return objectifier(operArr)
+	const output = objectifier(operArr)
+
+	return output[ 0 ]
 }
