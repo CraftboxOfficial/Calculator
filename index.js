@@ -2,7 +2,7 @@ const mathOperIn = document.querySelector("#math-operation-input")
 const mathOperOut = document.querySelector("#math-operation-output")
 const debugJson = document.querySelector("#debug-json")
 const disallowedChars = new RegExp(/[^\d-+/\\()*^x ]/g)
-const consecutiveOperators = new RegExp(/[-+/\\*^][-+/*^]|\+ \+|\/ \/|\* \*|\^ \^|\\ \\|  |\d \d|\(\)\(\)\(|\(\)\(\)\)/g)
+const consecutiveOperators = new RegExp(/[-+/\\*^][-+/*^]|\+ \+|\/ \/|\* \*|\^ \^|\\ \\|  |\d \d|\(\)\(\)|\(\)\(\)/g)
 const splitterChars = new RegExp(/ +|\+/)
 const operators = [ "+", "-", "=", "*", "/", "^", "\\" ]
 const parentheses = [ "(", ")" ]
@@ -41,6 +41,7 @@ mathOperIn.addEventListener("input", (event) => {
 	// updates output only when there is a change in operation; excludes adding spaces
 	if (inputVal.length != inputLen) {
 		mathOperOut.textContent = "..."
+		mathOperOut.parentElement.classList = ""
 		try {
 			const operationObject = lexAndPars(inputVal)
 
@@ -49,13 +50,9 @@ mathOperIn.addEventListener("input", (event) => {
 
 			mathOperOut.textContent = interperter(operationObject)
 
-			const a = 123.123456789123456789
-
-			// console.
-			// console.log(a.toFixed(a.toString().split(".")[ 1 ].length > 5 ? a.toString().split(".")[ 1 ].length - 1 : a.toString().split(".")[ 1 ].length))
-			// debugJson.textContent = "DEBUG"
 		} catch (err) {
 			mathOperOut.textContent = err
+			mathOperOut.parentElement.classList = "error"
 		}
 	}
 

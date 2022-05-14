@@ -1,19 +1,57 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-	<meta charset="UTF-8">
-	<meta http-equiv="X-UA-Compatible" content="IE=edge">
-	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<title>Calculator</title>
-</head>
-<body>
-	<div>
-		<input id="math-operation-input">
-	</div>
-	<div>
-		<p id="math-operation-output"></p>
-		<p id="debug-json"></p>
-	</div>
-	<script src="./index.js"></script>
-</body>
+
+	<head>
+		<meta charset="UTF-8">
+		<meta http-equiv="X-UA-Compatible" content="IE=edge">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+		<link href="./index.css" rel="stylesheet">
+		<title>Calculator</title>
+	</head>
+
+	<body>
+		<main>
+			<div id="math-div">
+				<div id="math-input-div">
+					<input name="math-input" id="math-operation-input" placeholder="Type here...">
+				</div>
+				<div id="math-output-div">
+					<span id="math-operation-output">0</span>
+				</div>
+			</div>
+			<p id="debug-json" style="position:fixed; background-color: rgba(0, 0, 0, 80%);"></p>
+			<div id="instruction">
+				<h2>Polynomial Calculator WIP</h2>
+				<h3>Supported Features</h3>
+				<ul>
+					<li>
+						<p>Addition: [num] + [num]</p>
+					</li>
+					<li>
+						<p>Subtraciton: [optional num] - [num]</p>
+					</li>
+					<li>
+						<p>Multiplication: [num] * [num]</p>
+					</li>
+					<li>
+						<p>Division: [num] / [num]</p>
+					</li>
+					<li>
+						<p>Exponentiation: [num] ^ [num]</p>
+					</li>
+					<li>
+						<p>Root: [optional num] \ [num]</p>
+					</li>
+					<li>
+						<p>Brackets: ( )</p>
+					</li>
+				</ul>
+			</div>
+		</main>
+		<footer>
+			<p>By Bartosz Dudziński 2022</p>
+		</footer>
+		<script src="./index.js"></script>
+	</body>
+
 </html>

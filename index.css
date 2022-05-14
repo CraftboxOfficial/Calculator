@@ -1,0 +1,102 @@
+body {
+	font-family: Verdana, Geneva, Tahoma, sans-serif;
+	margin: 0;
+	padding: 0;
+	height: 100vh;
+	min-width: 400px;
+	min-height: 400px;
+	display: flex;
+	flex-direction: column;
+}
+
+main {
+	font-size: x-large;
+}
+
+footer {
+	text-align: center;
+	margin-top: auto;
+}
+
+ul {
+	list-style: none;
+}
+
+#instruction {
+	padding: 1rem;
+}
+
+#math-input-div {
+	font-size: larger;
+	font-weight: 500;
+	height: 4em;
+}
+
+#math-operation-input {
+	display: block;
+	margin-left: 0;
+	padding: 0;
+	padding-left: 20px;
+	background-color: inherit;
+	border: none;
+	height: inherit;
+	font-size: inherit;
+	font-weight: inherit;
+	color: inherit;
+	width: calc(100% - 20px);
+	transition: background-color 100ms;
+}
+
+#math-output-div {
+	font-size: 40px;
+	font-weight: 500;
+	height: 6rem;
+}
+
+#math-operation-output {
+	position: relative;
+	/* margin: 0 auto; */
+	padding-left: 20px;
+	top: 1.5rem;
+	font-size: inherit;
+	font-weight: inherit;
+	height: inherit;
+	width: calc(100% - 20px);
+}
+
+#math-operation-input:focus {
+	outline: none;
+}
+
+.error {
+	color: #f23269;
+}
+
+@media (prefers-color-scheme: dark) {
+	body {
+		background-color: #161414;
+		color: #e9e8ea;
+	}
+
+	footer {
+		background-color: #1f1c1c;
+	}
+
+	#math-div {
+		background-color: #1f1c1c;
+	}
+
+	#math-operation-input:hover {
+		background-color: #23212181;
+	}
+
+	#math-operation-input:focus {
+		background-color: #232121;
+	}
+
+	/* #math-output-div {
+		background-color: #f2326818;
+	} */
+}
+
+@media (prefers-color-scheme: light) {}
