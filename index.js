@@ -1,8 +1,8 @@
 const mathOperIn = document.querySelector("#math-operation-input")
 const mathOperOut = document.querySelector("#math-operation-output")
-
+const debugJson = document.querySelector("#debug-json")
 const disallowedChars = new RegExp(/[^\d-+/()*^x ]/g)
-const consecutiveOperators = new RegExp(/--|\+\+|\/\/|\*\*|\^\^|  |\d \d|\(\)\(\)\(|\(\)\(\)\)/g)
+const consecutiveOperators = new RegExp(/[-+/*^][-+/*^]|\+ \+|\/ \/|\* \*|\^ \^|  |\d \d|\(\)\(\)\(|\(\)\(\)\)/g)
 const splitterChars = new RegExp(/ +|\+/)
 const operators = [ "+", "-", "=", "*", "/", "^" ]
 const parentheses = [ "(", ")" ]
@@ -40,11 +40,21 @@ mathOperIn.addEventListener("input", (event) => {
 
 	// updates output only when there is a change in operation; excludes adding spaces
 	if (inputVal.length != inputLen) {
+		mathOperOut.textContent = "..."
 		try {
 			const operationObject = lexAndPars(inputVal)
-			mathOperOut.textContent = JSON.stringify(operationObject)
+
+			debugJson.textContent = "Debug"
+			debugJson.textContent = JSON.stringify(operationObject)
+
+			mathOperOut.textContent = interperter(operationObject)
+
+			const a = 123.123456789123456789
+
+			// console.
+			// console.log(a.toFixed(a.toString().split(".")[ 1 ].length > 5 ? a.toString().split(".")[ 1 ].length - 1 : a.toString().split(".")[ 1 ].length))
+			// debugJson.textContent = "DEBUG"
 		} catch (err) {
-			console.log(err.value)
 			mathOperOut.textContent = err
 		}
 	}
@@ -83,10 +93,17 @@ function lexAndPars(mathOperation = "") {
 			return prev
 		}
 
+		// makes ... - 5 --> ... + -5
+		if (typeof value == "number" && prev[ prev.length - 1 ] == "-" && typeof prev[ prev.length - 2 ] == "number") {
+			prev[ prev.length - 1 ] = "+"
+			prev.push(value * -1)
+			return prev
+		}
+
 		prev.push(value)
 
 		return prev
-	}, [])
+	}, []).flat(2)
 
 	// returns arr for given position to first closing bracket in given arr
 	function getBracket(operArr, pos) {
@@ -153,11 +170,7 @@ function lexAndPars(mathOperation = "") {
 					switch (value) {
 						case "^":
 							{
-								const oper = new Operation([ prevVal(arr, index), nextVal(arr, index) ], "exponentiation")
-								if (oper.values.includes(undefined)) {
-									throw Error(errorMessages.missingValueFor + "exponentiation")
-								}
-								arr.splice(index - 1, 3, oper)
+								toOperationObject(arr, index, "exponentiation")
 								return
 							}
 					}
@@ -172,20 +185,12 @@ function lexAndPars(mathOperation = "") {
 					switch (value) {
 						case "*":
 							{
-								const oper = new Operation([ prevVal(arr, index), nextVal(arr, index) ], "multiplication")
-								if (oper.values.includes(undefined)) {
-									throw Error(errorMessages.missingValueFor + "multiplication")
-								}
-								arr.splice(index - 1, 3, oper)
+								toOperationObject(arr, index, "multiplication")
 								return
 							}
 						case "/":
 							{
-								const oper = new Operation([ prevVal(arr, index), nextVal(arr, index) ], "division")
-								if (oper.values.includes(undefined)) {
-									throw Error(errorMessages.missingValueFor + "division")
-								}
-								arr.splice(index - 1, 3, oper)
+								toOperationObject(arr, index, "division")
 								return
 							}
 					}
@@ -200,25 +205,48 @@ function lexAndPars(mathOperation = "") {
 					switch (value) {
 						case "+":
 							{
-								const oper = new Operation([ prevVal(arr, index), nextVal(arr, index) ], "addition")
-								if (oper.values.includes(undefined)) {
-									throw Error(errorMessages.missingValueFor + "addition")
-								}
-								arr.splice(index - 1, 3, oper)
+								toOperationObject(arr, index, "addition")
 								return
 							}
 						case "-":
 							{
-								const oper = new Operation([ prevVal(arr, index), nextVal(arr, index) ], "subtraction")
-								if (oper.values.includes(undefined)) {
-									throw Error(errorMessages.missingValueFor + "subtraction")
+								if (typeof prevVal(arr, index) !== "undefined") {
+									toOperationObject(arr, index, "subtraction")
+									return
 								}
-								arr.splice(index - 1, 3, oper)
-								return
+								if (typeof nextVal(arr, index) == "number") {
+									const oper = new Operation([ nextVal(arr, index) * -1 ], null, "simpleNumber")
+
+									arr.splice(index, 2, oper)
+									return
+								}
+								{
+									const oper = new Operation([ nextVal(arr, index), -1 ], "multiplication")
+									if (oper.values.includes(undefined)) {
+										throw Error(errorMessages.missingValueFor + "multiplication")
+									}
+									arr.splice(index, 2, oper)
+									return
+								}
 							}
 					}
 				}
 			})
+
+		}
+
+		function toOperationObject(arr, index, operation) {
+			const oper = new Operation([ prevVal(arr, index), nextVal(arr, index) ], operation, (prevVal(arr, index) == "x") || (nextVal(arr, index) == "x") ? "complexNumber" : "operation")
+			if (oper.values.includes(undefined)) {
+				throw Error(errorMessages.missingValueFor + operation)
+			}
+			arr.splice(index - 1, 3, oper)
+			return
+		}
+
+		if (arr.find(val => val.toString().match(/\d+/))) {
+			const oper = new Operation([ arr[ 0 ] ], null, "simpleNumber")
+			arr.splice(0, 1, oper)
 		}
 
 		return arr
@@ -227,4 +255,52 @@ function lexAndPars(mathOperation = "") {
 	const output = objectifier(operArr)
 
 	return output[ 0 ]
+}
+
+function interperter(operationObject = {}) {
+
+	if (operationObject.type == "operation") {
+		switch (operationObject.operation) {
+			case "addition":
+				{
+					valuesRecursion(operationObject)
+					return operationObject.values[ 0 ] + operationObject.values[ 1 ]
+				}
+			case "subtraction":
+				{
+					valuesRecursion(operationObject)
+					return operationObject.values[ 0 ] - operationObject.values[ 1 ]
+				}
+			case "multiplication":
+				{
+					valuesRecursion(operationObject)
+					return operationObject.values[ 0 ] * operationObject.values[ 1 ]
+				}
+			case "division":
+				{
+					valuesRecursion(operationObject)
+					return operationObject.values[ 0 ] / operationObject.values[ 1 ]
+				}
+			case "exponentiation":
+				{
+					valuesRecursion(operationObject)
+					return Math.pow(operationObject.values[ 0 ], operationObject.values[ 1 ])
+				}
+		}
+	}
+
+	if (operationObject.type == "simpleNumber") {
+		return operationObject.values[ 0 ]
+	}
+
+	function valuesRecursion(obj) {
+		for (let i = 0; i < obj.values.length; i++) {
+			value = obj.values[ i ]
+			if (typeof value == "object") {
+				obj.values[ i ] = interperter(value)
+			}
+		}
+	}
+
+	return 0
 }
