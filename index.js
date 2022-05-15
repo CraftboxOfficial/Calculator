@@ -13,6 +13,7 @@ const errorMessages = {
 	missingValueFor: "Missing value for ",
 	multipleObjectsGenerated: "Parser: multiple objects genereated; expected one object",
 	noObjectGenerated: "Parser: no objects generated; expected one object",
+	numberTooBig: "Number is too big",
 }
 class Operation {
 	constructor(values = [], operation = "", type = "operation") {
@@ -43,7 +44,12 @@ mathOperIn.addEventListener("input", (event) => {
 		mathOperOut.textContent = "..."
 		mathOperOut.parentElement.classList = ""
 		try {
-			const operationObject = lexAndPars(inputVal)
+			let operationObject = lexAndPars(inputVal)
+
+			console.log(operationObject)
+			if (operationObject === Infinity) {
+				throw Error(errorMessages.numberTooBig)
+			}
 
 			debugJson.textContent = "Debug"
 			debugJson.textContent = JSON.stringify(operationObject)
@@ -102,7 +108,7 @@ function lexAndPars(mathOperation = "") {
 		return prev
 	}, []).flat(2)
 
-	console.log(operArr)
+	// console.log(operArr)
 
 	// returns arr for given position to first closing bracket in given arr
 	function getBracket(operArr, pos) {
@@ -166,7 +172,7 @@ function lexAndPars(mathOperation = "") {
 		}
 
 		// replaces in the array every multiplication and division in given scope of operation, going from left to right
-		console.log(arr)
+		// console.log(arr)
 		while (arr.includes("^") || arr.includes("\\")) {
 			arr.forEach((value, index, arr) => {
 				if (value == "^" || "\\") {
@@ -183,13 +189,13 @@ function lexAndPars(mathOperation = "") {
 									return
 								}
 								{
-									console.log(arr)
+									// console.log(arr)
 									const oper = new Operation([ 2, nextVal(arr, index) ], "root")
 									if (oper.values.includes(undefined)) {
 										throw Error(errorMessages.missingValueFor + "root")
 									}
 									arr.splice(index, 2, oper)
-									console.log(arr)
+									// console.log(arr)
 									return
 								}
 							}
@@ -197,7 +203,7 @@ function lexAndPars(mathOperation = "") {
 				}
 			})
 		}
-		console.log(arr)
+		// console.log(arr)
 		// replaces in the array every multiplication and division in given scope of operation, going from left to right
 		while (arr.includes("*") || arr.includes("/")) {
 			arr.forEach((value, index, arr) => {
